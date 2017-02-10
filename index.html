@@ -1,0 +1,43 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Eco Speech Detect</title>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script>
+    <script>
+    if (annyang) {
+
+    console.log("Recognized commands:\n\tEco Mute\n\tEco Unmute\n\tEco Volume Up\n\tEco Volume Down\n")
+      // Let's define our first command. First the text we expect, and then the
+      // function it should call
+      var commands = {
+        'eco mute': function() {
+          console.log("tag matched: Eco Mute");
+        },
+        'eco unmute': function() {
+          console.log("tag matched: Eco Unmute");
+        },
+        'eco volume up': function() {
+          console.log("tag matched: Eco Volume Up");
+        },
+        'eco volume down': function() {
+          console.log("tag matched: Eco Volume Down");
+        },
+
+      };
+
+      // Add our commands to annyang
+      annyang.addCommands(commands);
+
+      // Start listening. You can call this here, or attach this call to an
+      // event, button, etc.
+      annyang.start();
+    }
+    </script>
+</body>
+</html>
