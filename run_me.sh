@@ -2,6 +2,7 @@
 
 ctrl_c()
 {
+    echo "" # new line
     echo "killing web server"
     kill $WEB_SERVER_PID
     exit 0
