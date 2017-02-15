@@ -101,7 +101,7 @@
 <p class="titles">Recognized Text</p>
 <div class="right">
   <button id="start_button" onclick="startButton(event)">
-    <img id="start_img" src="mic.gif" alt="Start"></button>
+    <img id="start_img" src="mic-slash.gif" alt="Start"></button>
 </div>
 <div id="results">
   <span id="final_span" class="final"></span>
@@ -115,11 +115,8 @@
 </div>
 <script>
 showInfo('info_start');
-
-var final_transcript = '';
 var recognizing = false;
 var ignore_onend;
-var start_timestamp;
 if (!('webkitSpeechRecognition' in window)) {
   upgrade();
 } else {
@@ -133,17 +130,14 @@ if (!('webkitSpeechRecognition' in window)) {
   recognition.onstart = function() {
     recognizing = true;
     showInfo('info_speak_now');
-    start_img.src = 'mic-animate.gif';
   };
 
   recognition.onerror = function(event) {
     if (event.error == 'no-speech') {
-      start_img.src = 'mic.gif';
       showInfo('info_no_speech');
       ignore_onend = true;
     }
     if (event.error == 'audio-capture') {
-      start_img.src = 'mic.gif';
       showInfo('info_no_microphone');
       ignore_onend = true;
     }
@@ -157,12 +151,21 @@ if (!('webkitSpeechRecognition' in window)) {
     }
   };
 
+  recognition.onspeechstart = function() {
+      start_img.src = 'mic-animate.gif';
+      console.log("speech start");
+  };
+
+  recognition.onspeechend = function() {
+      start_img.src = 'mic.gif';
+      console.log("speech end");
+  };
+
   recognition.onend = function() {
     recognizing = false;
     if (ignore_onend) {
       return;
     }
-    start_img.src = 'mic.gif';
     if (!final_transcript) {
       showInfo('info_start');
       return;
@@ -177,6 +180,16 @@ if (!('webkitSpeechRecognition' in window)) {
   };
 
   recognition.onresult = function(event) {
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results.length > 0) {
+            var result = event.results[0];
+            for (var i = 0; i < result.length; ++i) {
+                var text = result[i].transcript;
+                console.log(text);
+            }
+        }
+    }
+    return;
     var interim_transcript = '';
     for (var i = event.resultIndex; i < event.results.length; ++i) {
       if (event.results[i].isFinal) {
@@ -211,6 +224,7 @@ function capitalize(s) {
 function startButton(event) {
   if (recognizing) {
     recognition.stop();
+    start_img.src = 'mic-slash.gif';
     return;
   }
   final_transcript = '';
@@ -219,7 +233,7 @@ function startButton(event) {
   final_span.innerHTML = '';
   interim_span.innerHTML = '';
   tags_span.innerHTML = '';
-  start_img.src = 'mic-slash.gif';
+  start_img.src = 'mic.gif';
   showInfo('info_allow');
   start_timestamp = event.timeStamp;
 }
