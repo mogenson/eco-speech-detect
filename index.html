@@ -122,6 +122,10 @@ showInfo('info_start');
 var recognizing = false;
 var please_quit = false;
 var error = false;
+var commands = ["eco volume up", "eco volume down",
+                "eco mute", "eco unmute", "echo un mute",
+                "portal volume up", "portal volume down",
+                "portal mute", "portal unmute", "portal un mute"];
 if (!('webkitSpeechRecognition' in window)) {
     upgrade();
 } else {
@@ -131,6 +135,7 @@ if (!('webkitSpeechRecognition' in window)) {
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.maxAlternatives = 10;
+    recognition.start();
 
     recognition.onstart = function() {
         recognizing = true;
@@ -171,25 +176,32 @@ if (!('webkitSpeechRecognition' in window)) {
     };
 
     recognition.onresult = function(event) {
-        var recognizedText = '';
-        if (event.results.length > 0) {
-            var result = event.results[0];
-            for (var i = 0; i < result.length; ++i) {
+        if (event.results.length == 0) {
+            return;
+        }
+        var recognizedText = "<table>";
+        var result = event.results[0];
+        for (var i in result) {
+            if (result[i].transcript) {
+                recognizedText += "<tr><td>"
                 recognizedText += result[i].transcript;
-                recognizedText += "<br>";
+                recognizedText += "</td><td>[confidence: ";
+                recognizedText += result[i].confidence.toFixed(2);
+                recognizedText += "]</td></tr>";
             }
-            recognizedText = recognizedText.toLowerCase();
-            recognizedTextSpan.innerHTML = recognizedText;
-            matchedCommandsSpan.innerHTML = '';
-            if (matchCommand(recognizedText, "eco volume up")) {
-                matchedCommandsSpan.innerHTML = "eco volume up";
+        }
+        recognizedText += "</table>";
+        recognizedText = recognizedText.toLowerCase();
+        recognizedTextSpan.innerHTML = recognizedText;
+        matchedCommandsSpan.innerHTML = '';
+        for (var i in commands) {
+            if (recognizedText.indexOf(commands[i]) > -1) {
+                matchedCommandsSpan.innerHTML = commands[i];
+                break;
             }
         }
     };
-}
 
-function matchCommand(str, command) {
-    return str.indexOf(command) > -1;
 }
 
 function upgrade() {
