@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>Eco Speech Demo</title>
+<title>Shitty Personal Assistant</title>
 <style>
   * {
     font-family: Verdana, Arial, sans-serif;
@@ -62,7 +62,7 @@
     text-align: left;
     min-height: 150px;
   }
-  #matchedCommands {
+  #spokenResponse {
     font-size: 14px;
     font-weight: bold;
     border: 1px solid #ddd;
@@ -84,14 +84,14 @@
     padding: 0;
   }
 </style>
-<h1 class="center" id="headline">Eco Speech Demo</h1>
+<h1 class="center" id="headline">Shitty Personal Assistant</h1>
 <div id="info">
   <p id="info_start">Click on the microphone icon and begin speaking.</p>
   <p id="info_speak_now">Speak now.</p>
   <p id="info_no_speech">No speech was detected. You may need to adjust your
     <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
       microphone settings</a>.</p>
-  <p id="info_no_microphone" style="display:none">
+  <p id="info_no_microphone" style="display:none"
     No microphone was found. Ensure that a microphone is installed and that
     <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
     microphone settings</a> are configured correctly.</p>
@@ -101,46 +101,53 @@
     go to chrome://settings/contentExceptions#media-stream</p>
   <p id="info_upgrade">Web Speech API is not supported by this browser.
      Upgrade to <a href="//www.google.com/chrome">Chrome</a>
-     version 25 or later.</p>
+     version 33 or later.</p>
 </div>
 <p class="titles">Recognized Text</p>
 <div class="right">
   <button id="start_button" onclick="startButton(event)">
-    <img id="start_img" src="mic.gif" alt="Start"></button>
+    <img id="startImg" src="mic.gif" alt="Start"></button>
 </div>
 <div id="recognizedText">
   <span id="recognizedTextSpan" class="text"></span>
   <p>
 </div>
-<p class="titles">Matched Commands</p>
-<div id="matchedCommands">
-  <span id="matchedCommandsSpan" class="text"></span>
+<p class="titles">Spoken Response</p>
+<div id="spokenResponse">
+  <span id="spokenResponseSpan" class="text"></span>
   <p>
 </div>
 <script>
 showInfo('info_start');
 var recognizing = false;
-var please_quit = false;
+var pleaseQuit = false;
 var error = false;
-var commands = ["eco volume up", "eco volume down",
-                "eco mute", "eco unmute", "echo un mute",
-                "portal volume up", "portal volume down",
-                "portal mute", "portal unmute", "portal un mute"];
-if (!('webkitSpeechRecognition' in window)) {
+var synth = new SpeechSynthesisUtterance(
+    "Hello, I'm your new personal assistant. What can I help you with today?");
+var sorrys = ["", "Sorry, ", "I'm so sorry, ", "I didn't quite catch that, ",
+    "This is my first day here, ", "Last time I swear, ", "I couldn't hear you, ",
+    "I wasn't listening, ", "Real sorry this time, ", "Shit, ", "Wait, ", "Hold on, ",
+    "Um, ", "This must be wrong, ", "That can't be right, ", "Sorry I was texting, "];
+if (!('webkitSpeechRecognition' in window) && !('speechSynthesis' in window)) {
     upgrade();
 } else {
     start_button.style.display = 'inline-block';
+    spokenResponseSpan.innerHTML = synth.text;
+    window.speechSynthesis.speak(synth);
     var recognition = new webkitSpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    recognition.maxAlternatives = 10;
-    recognition.start();
+    recognition.lang = 'en-SA';
+    recognition.maxAlternatives = 20;
+
+    synth.onend = function() {
+        recognition.start();
+    }
 
     recognition.onstart = function() {
         recognizing = true;
         showInfo('info_speak_now');
-        start_img.src = 'mic-animate.gif';
+        startImg.src = 'mic-animate.gif';
     };
 
     recognition.onerror = function(event) {
@@ -157,49 +164,51 @@ if (!('webkitSpeechRecognition' in window)) {
                 showInfo('info_denied');
             }
         }
-        please_quit = true;
+        pleaseQuit = true;
         error = true;
     };
 
     recognition.onend = function() {
-        if (please_quit == false) {
-            recognition.start();
-            return;
-        }
-        start_img.src = 'mic.gif';
+        startImg.src = 'mic.gif';
         recognizing = false;
-        recognizedTextSpan.innerHTML = '';
-        matchedCommandsSpan.innerHTML = '';
         if (error == false) {
             showInfo('info_start');
+            spokenResponseSpan.innerHTML = synth.text;
+            window.speechSynthesis.speak(synth);
+            synth.text = '';
         }
     };
 
     recognition.onresult = function(event) {
+        spokenResponseSpan.innerHTML = '';
+        recognizedTextSpan.innerHTML = '';
         if (event.results.length == 0) {
             return;
         }
-        var recognizedText = "<table>";
         var result = event.results[0];
+        var confidenceMin = 1;
+        var confidenceMax = 0;
+        var confidenceMinIndex = 0;
+        var confidenceMaxIndex = 0;
         for (var i in result) {
             if (result[i].transcript) {
-                recognizedText += "<tr><td>"
-                recognizedText += result[i].transcript;
-                recognizedText += "</td><td>[confidence: ";
-                recognizedText += result[i].confidence.toFixed(2);
-                recognizedText += "]</td></tr>";
+                console.log(result[i].transcript);
+                if (result[i].confidence < confidenceMin) {
+                    confidenceMin = result[i].confidence;
+                    confidenceMinIndex = i;
+                }
+                if (result[i].confidence > confidenceMax) {
+                    confidenceMax = result[i].confidence;
+                    confidenceMaxIndex = i;
+                }
             }
         }
-        recognizedText += "</table>";
-        recognizedText = recognizedText.toLowerCase();
+        recognizedText = result[confidenceMinIndex].transcript;
         recognizedTextSpan.innerHTML = recognizedText;
-        matchedCommandsSpan.innerHTML = '';
-        for (var i in commands) {
-            if (recognizedText.indexOf(commands[i]) > -1) {
-                matchedCommandsSpan.innerHTML = commands[i];
-                break;
-            }
-        }
+        synth.text = sorrys[Math.floor(Math.random()*sorrys.length)];
+        synth.text += "did you say \"";
+        synth.text += result[confidenceMaxIndex].transcript;
+        synth.text += "\" ?";
     };
 
 }
@@ -211,12 +220,12 @@ function upgrade() {
 
 function startButton(event) {
     if (recognizing) {
-        please_quit = true;
+        pleaseQuit = true;
         recognition.stop();
         return;
     }
     recognizedTextSpan.innerHTML = '';
-    matchedCommandsSpan.innerHTML = '';
+    spokenResponseSpan.innerHTML = '';
     recognition.start();
     showInfo('info_allow');
     start_timestamp = event.timeStamp;
